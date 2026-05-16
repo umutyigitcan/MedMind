@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+openai
+python-dotenv
+faiss-cpu
+numpy
+pydantic
+psycopg2-binary
+torch
+transformers
+datasets
+scikit-learn
+PyMuPDF

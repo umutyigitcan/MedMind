@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+.env.local
+.env.*
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Private PDFs / medical documents
+*.pdf
+
+# Generated RAG files
+rag_index.faiss
+rag_index.faiss.index
+metadata_list.json
+
+# Local datasets
+*.jsonl
+medmind_dataset.jsonl
+MedMind_FineTune.json
+
+# Trained models and checkpoints
+MedMind-BERT/
+results/
+runs/
+checkpoint-*/
+*.bin
+*.safetensors
+*.pt
+*.pth
