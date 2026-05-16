@@ -1,104 +1,48 @@
-from typing import Dict, List
+from typing import Dict, Any
 
 from openai import OpenAI
 
 from app.config import settings
 from app.retrieval_service import retrieve_medical_context
 
+
 client = OpenAI(api_key=settings.openai_api_key)
 
-SYSTEM_PROMPT = """
-You are MedMind, a safe medical support assistant.
 
-Your role:
-- Explain possible general causes based on the provided medical context.
-- Give safe, practical, non-diagnostic guidance.
-- Encourage professional medical evaluation when symptoms are severe, persistent, unusual, or worsening.
-- For emergency symptoms, clearly advise urgent medical help.
-- Do not claim to diagnose the user.
-- Do not prescribe medication doses.
-- Do not replace a doctor.
-- Keep the answer clear, calm, and useful.
-
-Response style:
-- Use simple language.
-- Be concise but helpful.
-- Mention warning signs when relevant.
-- If the retrieved context is not enough, say that clearly.
-"""
-
-
-def build_medical_prompt(
-    user_message: str,
-    intent: str,
-    context: str,
-) -> str:
-    return f"""
-User message:
-{user_message}
-
-Detected intent:
-{intent}
-
-Retrieved medical context:
-{context}
-
-Generate a safe and helpful medical support answer based on the information above.
-"""
-
-
-def generate_medical_answer(
-    user_message: str,
-    intent: str,
-    context: str,
-) -> str:
+def build_medical_answer(query: str) -> str:
     settings.validate_openai_settings()
 
-    prompt = build_medical_prompt(
-        user_message=user_message,
-        intent=intent,
-        context=context,
-    )
+    retrieval_result: Dict[str, Any] = retrieve_medical_context(query)
+    context_text = retrieval_result.get("context", "")
+
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are MedMind, a careful and safe health assistant. "
+                "Use the provided medical context when it is relevant. "
+                "Do not provide a definitive diagnosis. "
+                "Do not prescribe medication. "
+                "Encourage professional medical evaluation when symptoms are serious, persistent, or unclear."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                f"User question:\n{query}\n\n"
+                f"Retrieved medical context:\n{context_text}\n\n"
+                "Write a helpful, safe, and clear answer."
+            ),
+        },
+    ]
 
     response = client.chat.completions.create(
         model=settings.openai_chat_model,
+        messages=messages,
         temperature=0.2,
-        messages=[
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT,
-            },
-            {
-                "role": "user",
-                "content": prompt,
-            },
-        ],
     )
 
     return response.choices[0].message.content or ""
-
-
-def answer_with_rag(
-    user_message: str,
-    intent: str,
-    top_k: int = 3,
-) -> Dict[str, object]:
-    retrieved = retrieve_medical_context(
-        query=user_message,
-        top_k=top_k,
-    )
-
-    answer = generate_medical_answer(
-        user_message=user_message,
-        intent=intent,
-        context=retrieved["context"],
-    )
-
-    return {
-        "answer": answer,
-        "intent": intent,
-        "matches": retrieved["matches"],
-    }
 
 
 def build_emergency_answer() -> str:
